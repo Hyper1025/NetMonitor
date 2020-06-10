@@ -13,7 +13,7 @@ namespace NetMonitor
         internal static void IniciarLog()
         {
             var pasta = $"{Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData)}/NetMonitor/Logs";
-            var nomeArquivo = $"{DateTime.Now.Hour}-{DateTime.Now.Minute}-{DateTime.Now.Second}-{DateTime.Now.Millisecond}";
+            var nomeArquivo = $"{DateTime.Now.Year}-{DateTime.Now.Month}-{DateTime.Now.Day}-T{DateTime.Now.Hour}-{DateTime.Now.Minute}-{DateTime.Now.Second}-{DateTime.Now.Millisecond}";
             var arquivo = $"{pasta}/{nomeArquivo}.txt";
 
             _path = arquivo;
@@ -62,7 +62,7 @@ namespace NetMonitor
                     break;
                 case LogType.Final:
                     linha =
-                        $"---------------------------------------\r\n{DateTime.Now.Year}-{DateTime.Now.Month}-{DateTime.Now.Day} {DateTime.Now.Hour}:{DateTime.Now.Minute}:{DateTime.Now.Second}\tFinal Do Log\r\nDuratção:\t\t\t{TempoMonitorando}\r\nNúmero de falhas:\t{numeroFalhas}\r\n=======================================";
+                        $"\n---------------------------------------\r\n{DateTime.Now.Year}-{DateTime.Now.Month}-{DateTime.Now.Day} {DateTime.Now.Hour}:{DateTime.Now.Minute}:{DateTime.Now.Second}\tFinal Do Log\r\nDuratção:\t\t\t{TempoMonitorando}\r\nNúmero de falhas:\t{numeroFalhas}\r\n=======================================";
                     break;
             }
 
