@@ -11,7 +11,8 @@
         FontFamily="Roboto"
         Background="#0b2239"
         Foreground="White"
-        ResizeMode="CanMinimize" WindowStyle="None">
+        ResizeMode="CanMinimize" 
+        WindowStyle="None">
     <!--<ScrollViewer>-->
     <Grid x:Name="Painel">
 

@@ -1,18 +1,20 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Globalization;
-using System.Windows;
-using System.Windows.Threading;
 using System.Net.NetworkInformation;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Input;
+using System.Windows.Threading;
 using AutoUpdaterDotNET;
 using LiveCharts;
 using LiveCharts.Defaults;
 using LiveCharts.Wpf;
 using Microsoft.Win32;
 using NetMonitor.Properties;
+using Application = System.Windows.Application;
 
 namespace NetMonitor
 {
@@ -23,9 +25,8 @@ namespace NetMonitor
     {
         private bool _status = true;
         private int _nQuedas;
-        private readonly Stopwatch _watchQueda = new Stopwatch();
+        private Stopwatch _watchQueda = new Stopwatch();
         private int _intervalo = 5;
-
         private double _pingTabela;
         public SeriesCollection TabelaPingDataSource { get; set; }
 
@@ -37,6 +38,18 @@ namespace NetMonitor
             CarregarConfigs();
             _watchQueda.Reset();
             Ticker();
+
+            //  Icone bandeija windows
+            System.Windows.Forms.NotifyIcon ni = new System.Windows.Forms.NotifyIcon();
+            ni.Icon = new System.Drawing.Icon("Internet-256.ico");
+            ni.Visible = true;
+            ni.DoubleClick +=
+                delegate (object sender, EventArgs args)
+                {
+                    this.Show();
+                    this.WindowState = WindowState.Normal;
+                };
+
 
             AutoUpdater.Start("https://raw.githubusercontent.com/Hyper1025/NetMonitor/master/NetMonitor/Updater.xml");
 
@@ -75,6 +88,13 @@ namespace NetMonitor
 
             Task.Run(AtualizarTabela);
             DataContext = this;
+        }
+
+        protected override void OnStateChanged(EventArgs e)
+        {
+            if (WindowState == WindowState.Minimized)
+                this.Hide();
+            base.OnStateChanged(e);
         }
 
         private Task AtualizarTabela()
@@ -159,17 +179,17 @@ namespace NetMonitor
         private async Task IniciarTeste()
         {
             // Testa os 3 servidores
-            EstruturaDeResposta test1 = default;
-            EstruturaDeResposta test2 = default;
-            EstruturaDeResposta test3 = default;
-            EstruturaDeResposta test4 = default;
-            
+            EstruturaDeResposta respostaStatusGoogle = default;
+            EstruturaDeResposta respostaStatusOpenDns = default;
+            EstruturaDeResposta respostaStatusCloudFlare = default;
+            EstruturaDeResposta respostaStatusRiot = default;
+
             var p = new Ping();
             var buffer = new byte[32];
-            var timeout = 1000;
+            const int timeout = 1000;
             var pingOptions = new PingOptions();
 
-            string[] listaIps = {"8.8.8.8", "208.67.222.222", "1.1.1.1", "104.160.152.3"};
+            string[] listaIps = { "8.8.8.8", "208.67.222.222", "1.1.1.1", "104.160.152.3" };
             foreach (var ip in listaIps)
             {
                 PingReply r = null;
@@ -183,122 +203,147 @@ namespace NetMonitor
                     Console.WriteLine(e);
                 }
 
-                var retorno = new EstruturaDeResposta();
+                //var VariavelDoLoopInternoParaRetorno = new EstruturaDeResposta();
 
-                if (r== null)
+                //  Verificamos se 'r' é nulo
+                if (r == null)
                 {
+                    //  Se for nulo, verificamos o ip de entrada
+                    //  e passamos o valor para a respectiva estrutura de resposta
+                    //  Primeiro descarte é feito se a resposta for nula
                     switch (ip)
                     {
+                        //  Resposta Google
                         case "8.8.8.8":
-                            test1.Sucesso = false;
-                            test1.TempoDeResposta = 1000;
+                            respostaStatusGoogle.Sucesso = false;
+                            respostaStatusGoogle.TempoDeResposta = 1000;
                             IconPingGoogle.Foreground = Global.HexToColorBrushConverter("#ff0000");
                             GoogleMs.Text = "Sem rede";
                             break;
+                        //  Resposta OpenDns
                         case "208.67.222.222":
-                            test2.Sucesso = false;
-                            test2.TempoDeResposta = 1000;
+                            respostaStatusOpenDns.Sucesso = false;
+                            respostaStatusOpenDns.TempoDeResposta = 1000;
                             IconPingOpenDns.Foreground = Global.HexToColorBrushConverter("#ff0000");
                             OpenDnsMs.Text = "Sem rede";
                             break;
+                        //  Resposta CloudFlare
                         case "1.1.1.1":
-                            test3.Sucesso = false;
-                            test3.TempoDeResposta = 1000;
+                            respostaStatusCloudFlare.Sucesso = false;
+                            respostaStatusCloudFlare.TempoDeResposta = 1000;
                             IconPingCloudflare.Foreground = Global.HexToColorBrushConverter("#ff0000");
                             CloudflareMs.Text = "Sem rede";
                             break;
+                        //  Resposta Riot
                         case "104.160.152.3":
-                            test4.Sucesso = false;
-                            test4.TempoDeResposta = 1000;
+                            respostaStatusRiot.Sucesso = false;
+                            respostaStatusRiot.TempoDeResposta = 1000;
                             IconPingGame.Foreground = Global.HexToColorBrushConverter("#ff0000");
+                            _pingTabela = 1000;
                             GameMs.Text = "Sem rede";
                             break;
                     }
-                    break;
+                    //break;
                 }
-
-                if (r.Status == IPStatus.Success)
+                //  Do contrário verficamos se obtivemos sucesso
+                //  Agora verificamos se obtivemos sucesso ao conectar com o ip
+                else if (r.Status == IPStatus.Success)
                 {
-                    retorno.Sucesso = true;
-                    retorno.TempoDeResposta = r.RoundtripTime;
+                    switch (ip)
+                    {
+                        //  Resposta Google
+                        case "8.8.8.8":
+                            respostaStatusGoogle.Sucesso = true;
+                            respostaStatusGoogle.TempoDeResposta = r.RoundtripTime;
+                            //  Atribuimos a cor do icone de acordo com o ping.
+                            //  Caso ping > 80, recebe a cor amarela
+                            //  Caso ping < 80, recebe  a cor verde verde
+                            IconPingGoogle.Foreground = r.RoundtripTime > 80 ? Global.HexToColorBrushConverter("#ffb229") : Global.HexToColorBrushConverter("#4ad295");
+                            GoogleMs.Text = $"{r.RoundtripTime} ms";
+                            break;
+                        //  Resposta OpenDns
+                        case "208.67.222.222":
+                            respostaStatusOpenDns.Sucesso = true;
+                            respostaStatusOpenDns.TempoDeResposta = r.RoundtripTime;
+                            //  Atribuimos a cor do icone de acordo com o ping.
+                            //  Caso ping > 80, recebe a cor amarela
+                            //  Caso ping < 80, recebe  a cor verde verde
+                            IconPingOpenDns.Foreground = r.RoundtripTime > 80 ? Global.HexToColorBrushConverter("#ffb229") : Global.HexToColorBrushConverter("#4ad295");
+                            OpenDnsMs.Text = $"{r.RoundtripTime} ms";
+                            break;
+                        //  Resposta CloudFlare
+                        case "1.1.1.1":
+                            respostaStatusCloudFlare.Sucesso = true;
+                            respostaStatusCloudFlare.TempoDeResposta = r.RoundtripTime;
+                            //  Atribuimos a cor do icone de acordo com o ping.
+                            //  Caso ping > 80, recebe a cor amarela
+                            //  Caso ping < 80, recebe  a cor verde verde
+                            IconPingCloudflare.Foreground = r.RoundtripTime > 80 ? Global.HexToColorBrushConverter("#ffb229") : Global.HexToColorBrushConverter("#4ad295");
+                            CloudflareMs.Text = $"{r.RoundtripTime} ms";
+                            break;
+                        //  Resposta Riot
+                        case "104.160.152.3":
+                            respostaStatusRiot.Sucesso = true;
+                            respostaStatusRiot.TempoDeResposta = r.RoundtripTime;
+                            //  Atribuimos a cor do icone de acordo com o ping.
+                            //  Caso ping > 80, recebe a cor amarela
+                            //  Caso ping < 80, recebe  a cor verde verde
+                            IconPingGame.Foreground = r.RoundtripTime > 80 ? Global.HexToColorBrushConverter("#ffb229") : Global.HexToColorBrushConverter("#4ad295");
+                            _pingTabela = r.RoundtripTime;
+                            GameMs.Text = $"{r.RoundtripTime} ms";
+                            break;
+                    }
                 }
+                //  Caso a resposta não for nula, nem de sucesso.
+                //  Passamos o erro para a string respectiva de cada servidor
                 else
                 {
-                    retorno.Sucesso = false;
-                    retorno.TempoDeResposta = 1000;
-                }
-
-                switch (ip)
-                {
-                    case "8.8.8.8":
-                        test1 = retorno;
-                        if (retorno.Sucesso)
-                        {
-                            // Exibe o resultado positivo e coloca a cor referente ao ping
-                            IconPingGoogle.Foreground = retorno.TempoDeResposta > 80 ? Global.HexToColorBrushConverter("#ffb229") : Global.HexToColorBrushConverter("#4ad295");
-                            GoogleMs.Text = $"{retorno.TempoDeResposta} ms";
-                        }
-                        else
-                        {
+                    switch (ip)
+                    {
+                        //  Resposta Google
+                        case "8.8.8.8":
+                            respostaStatusGoogle.Sucesso = false;
+                            respostaStatusGoogle.TempoDeResposta = r.RoundtripTime;
                             IconPingGoogle.Foreground = Global.HexToColorBrushConverter("#ff0000");
-                            GoogleMs.Text = "Sem rede";
-                        }
-                        break;
-                    case "208.67.222.222":
-                        test2 = retorno;
-                        if (retorno.Sucesso)
-                        {
-                            // Exibe o resultado positivo e coloca a cor referente ao ping
-                            IconPingOpenDns.Foreground = retorno.TempoDeResposta > 80 ? Global.HexToColorBrushConverter("#ffb229") : Global.HexToColorBrushConverter("#4ad295");
-                            OpenDnsMs.Text = $"{retorno.TempoDeResposta} ms";
-                        }
-                        else
-                        {
+                            GoogleMs.Text = r.Status.ToString();
+                            break;
+                        //  Resposta OpenDns
+                        case "208.67.222.222":
+                            respostaStatusOpenDns.Sucesso = false;
+                            respostaStatusOpenDns.TempoDeResposta = r.RoundtripTime;
                             IconPingOpenDns.Foreground = Global.HexToColorBrushConverter("#ff0000");
-                            OpenDnsMs.Text = "Sem rede";
-                        }
-                        break;
-                    case "1.1.1.1":
-                        test3 = retorno;
-                        if (retorno.Sucesso)
-                        {
-                            // Exibe o resultado positivo e coloca a cor referente ao ping
-                            IconPingCloudflare.Foreground = retorno.TempoDeResposta > 80 ? Global.HexToColorBrushConverter("#ffb229") : Global.HexToColorBrushConverter("#4ad295");
-                            CloudflareMs.Text = $"{retorno.TempoDeResposta} ms";
-                        }
-                        else
-                        {
+                            OpenDnsMs.Text = r.Status.ToString();
+                            break;
+                        //  Resposta CloudFlare
+                        case "1.1.1.1":
+                            respostaStatusCloudFlare.Sucesso = false;
+                            respostaStatusCloudFlare.TempoDeResposta = r.RoundtripTime;
                             IconPingCloudflare.Foreground = Global.HexToColorBrushConverter("#ff0000");
-                            CloudflareMs.Text = "Sem rede";
-                        }
-                        break;
-                    case "104.160.152.3":
-                        test4 = retorno;
-                        if (retorno.Sucesso)
-                        {
-                            // Exibe o resultado positivo e coloca a cor referente ao ping
-                            IconPingGame.Foreground = retorno.TempoDeResposta > 80 ? Global.HexToColorBrushConverter("#ffb229") : Global.HexToColorBrushConverter("#4ad295");
-                            GameMs.Text = $"{retorno.TempoDeResposta} ms";
-                        }
-                        else
-                        {
+                            CloudflareMs.Text = r.Status.ToString();
+                            break;
+                        //  Resposta Riot
+                        case "104.160.152.3":
+                            respostaStatusRiot.Sucesso = false;
+                            respostaStatusRiot.TempoDeResposta = r.RoundtripTime;
+                            _pingTabela = 1000;
                             IconPingGame.Foreground = Global.HexToColorBrushConverter("#ff0000");
-                            GameMs.Text = "Sem rede";
-                        }
-                        break;
+                            GameMs.Text = r.Status.ToString();
+                            break;
+                    }
                 }
             }
 
 
-            // Verificamos o resultados 
-            // REDE OFF
-            if (test1.Sucesso == false && test2.Sucesso == false && test3.Sucesso == false && test4.Sucesso == false)
+            //  Verificamos o resultados 
+            //  REDE ESTÁ OFF
+            //  Para determinarmos isso, precisamos ver se todos servidores retornaram seu sucesso como falso
+            if (respostaStatusGoogle.Sucesso == false && respostaStatusOpenDns.Sucesso == false && respostaStatusCloudFlare.Sucesso == false && respostaStatusRiot.Sucesso == false)
             {
                 if (_status)
                 {
                     // Constata queda
                     Logger.Escrever(Logger.LogType.Queda);
-                    Global.Notificar("Sua rede caiu", "ff0000");
+                    Global.Notificar("Sua rede caiu", "#ff0000");
 
                     HorarioDaQueda.Text = DateTime.Now.ToString(CultureInfo.CurrentCulture);
                     _nQuedas += 1;
@@ -308,8 +353,9 @@ namespace NetMonitor
                 }
             }
 
-            // REDE ON
-            if (test1.Sucesso || test2.Sucesso || test3.Sucesso || test4.Sucesso)
+            // REDE ESTÁ ON
+            //  Para determinarmos isso, precisamos ver se qualquer servidor retornou seu sucesso como verdadeiro
+            if (respostaStatusGoogle.Sucesso || respostaStatusOpenDns.Sucesso || respostaStatusCloudFlare.Sucesso || respostaStatusRiot.Sucesso)
             {
                 if (_status == false)
                 {
@@ -321,37 +367,44 @@ namespace NetMonitor
                 }
             }
 
-            if (test4.Sucesso)
+            if (respostaStatusRiot.Sucesso)
             {
-                _pingTabela = test4.TempoDeResposta;
+                _pingTabela = respostaStatusRiot.TempoDeResposta;
             }
             else
             {
                 _pingTabela = 1000;
             }
 
+            
             // Ping Jogo/Todos servidores
+
+            //  Se a checkbox está ativa, então devemos considerar
+            //  somente o ping do servidor da riot (que é o de jogos).
             if (CheckBoxPing.IsChecked.HasValue)
             {
-                if (test4.TempoDeResposta > 80)
+                if (respostaStatusRiot.TempoDeResposta > 80)
                 {
                     if (_status)
                     {
-                        PingAlto.Text = $"{DateTime.Now.ToString(CultureInfo.CurrentCulture)} | {test4.TempoDeResposta} ms";
+                        PingAlto.Text = $"{DateTime.Now.ToString(CultureInfo.CurrentCulture)} | {respostaStatusRiot.TempoDeResposta} ms";
                         Logger.Escrever(Logger.LogType.Latencia);
-                        Global.Notificar("Ping alto servidor de jogo", "ff0000");
+                        Global.Notificar("Ping alto servidor de jogo", "#ff0000");
                     }
                 }
             }
+
+            //  Caso ela esteja desativada, então devemos considerar
+            //  o ping de todos os servidores
             else
             {
-                if (test1.TempoDeResposta > 80 && test2.TempoDeResposta > 80 && test3.TempoDeResposta > 80 && test4.TempoDeResposta > 80)
+                if (respostaStatusGoogle.TempoDeResposta > 80 && respostaStatusOpenDns.TempoDeResposta > 80 && respostaStatusCloudFlare.TempoDeResposta > 80 && respostaStatusRiot.TempoDeResposta > 80)
                 {
                     if (_status)
                     {
-                        PingAlto.Text = $"{DateTime.Now.ToString(CultureInfo.CurrentCulture)} | {test4.TempoDeResposta} ms";
+                        PingAlto.Text = $"{DateTime.Now.ToString(CultureInfo.CurrentCulture)} | {respostaStatusRiot.TempoDeResposta} ms";
                         Logger.Escrever(Logger.LogType.Latencia);
-                        Global.Notificar("Ping alto servidor de jogo", "ff0000");
+                        Global.Notificar("Ping alto servidor de jogo", "#ff0000");
                     }
                 }
             }
@@ -377,53 +430,6 @@ namespace NetMonitor
 
         }
 
-
-        // Função responsável por realizar o teste
-        //private EstruturaDeResposta PingTest(string ip, TextBlock textBlock, PackIcon packIcon)
-        //{
-        //    var ping = new Ping();
-        //    var host = ip;
-        //    var buffer = new byte[32];
-        //    var timeout = 1000;
-        //    var pingOptions = new PingOptions();
-        //    PingReply reply;
-
-        //    var resposta = new EstruturaDeResposta();
-
-        //    try
-        //    {
-        //        reply = ping.Send(host, timeout, buffer, pingOptions);
-        //    }
-        //    catch (Exception)
-        //    {
-        //        reply = null;
-        //    }
-
-        //    //  Resultado positivo
-        //    if (reply != null && reply.Status == IPStatus.Success)
-        //    {
-        //        // Exibe o resultado positivo e coloca a cor referente ao ping
-        //        packIcon.Foreground = reply.RoundtripTime > 80 ? Global.HexToColorBrushConverter("#ffb229") : Global.HexToColorBrushConverter("#4ad295");
-
-        //        textBlock.Text = $"{reply.RoundtripTime} ms";
-        //        ping.Dispose();
-
-        //        resposta.Sucesso = true;
-        //        resposta.TempoDeResposta = reply.RoundtripTime;
-        //        return resposta;
-        //    }
-
-        //    // Resultado negativo
-        //    // Exibe o resultado negativo e mostra a cor vermelha
-        //    packIcon.Foreground = Global.HexToColorBrushConverter("#ff0000");
-        //    textBlock.Text = reply == null ? "Sem rede" : reply.Status.ToString();
-        //    ping.Dispose();
-
-        //    resposta.Sucesso = false;
-        //    resposta.TempoDeResposta = 1000;
-        //    return resposta;
-        //}
-
         // Botão minimizar
         private void ButtonMinimizar_OnClick(object sender, RoutedEventArgs e)
         {
@@ -448,28 +454,15 @@ namespace NetMonitor
             Process.Start(Logger._pasta);
         }
         
-        //  Adiciona e remove do startup
-
-        //private void startup()
-        //{
-        //    RegistryKey rk = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", true);
-
-        //    if ()
-        //    {
-        //        rk?.SetValue("NetMonitor", System.Reflection.Assembly.GetExecutingAssembly().Location);
-        //    }
-        //    else
-        //    {
-        //        rk?.DeleteValue("NetMonitor", false);
-        //    }
-        //}
+        //  Adiciona ao startup do windows
         private void CheckBoxStartup_OnChecked(object sender, RoutedEventArgs e)
         {
             RegistryKey rk = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", true);
-            rk.SetValue("NetMonitor", System.Reflection.Assembly.GetExecutingAssembly().Location);
+            rk.SetValue("NetMonitor", Assembly.GetExecutingAssembly().Location);
             rk.Close();
         }
 
+        //  Remove do startup do windows
         private void CheckBoxStartup_OnUnchecked(object sender, RoutedEventArgs e)
         {
             RegistryKey rk = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", true);
