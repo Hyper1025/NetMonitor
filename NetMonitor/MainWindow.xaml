@@ -6,50 +6,27 @@
         mc:Ignorable="d"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         xmlns:wpf="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
-        Title="NetMonitor" Height="960" Width="532"
+        Title="NetMonitor" Height="985" Width="555"
         WindowStartupLocation="CenterScreen"
         FontFamily="Roboto"
         Background="#0b2239"
         Foreground="White"
-        ResizeMode="CanMinimize" 
-        WindowStyle="None">
-    <!--<ScrollViewer>-->
-    <Grid x:Name="Painel">
-
-        <!--Mover a tela-->
-        <Rectangle VerticalAlignment="Top" Height="30" Fill="#061422" MouseDown="Rectangle_OnMouseDown"/>
-
-        <!--Botão minimizar-->
-        <Button 
-            x:Name="ButtonMinimizar" 
-            ToolTip="Minimizar" 
-            Content="{materialDesign:PackIcon WindowMinimize}" 
-            Width="30" Height="30" 
-            Background="{x:Null}" 
-            BorderBrush="{x:Null}" 
-            Padding="0" 
-            Foreground="White" 
-            Opacity="0.2" 
-            VerticalAlignment="Top" 
-            HorizontalAlignment="Right" 
-            Margin="0,0,30,0" 
-            Click="ButtonMinimizar_OnClick"/>
-
-        <!--Botão fechar-->
-        <Button 
-            x:Name="ButtonFechar" 
-            ToolTip="Fechar" 
-            Content="{materialDesign:PackIcon Power}" 
-            Width="30" Height="30" 
-            Background="{x:Null}" BorderBrush="{x:Null}" 
-            Padding="0" 
-            Foreground="White" 
-            Opacity="0.2" 
-            VerticalAlignment="Top" HorizontalAlignment="Right" 
-            Click="ButtonFechar_OnClick"/>
-
+        WindowStyle="None"
+        ResizeMode="CanResize"
+        MinWidth="555"
+        MinHeight="555">
+    <WindowChrome.WindowChrome>
+        <WindowChrome 
+            CaptionHeight="0"
+            CornerRadius="2"
+            GlassFrameThickness="0"
+            NonClientFrameEdges="None"
+            ResizeBorderThickness="5" />
+    </WindowChrome.WindowChrome>
+    <Grid>
         <!--Grid principal-->
-        <Grid>
+        <ScrollViewer>
+            <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
@@ -292,7 +269,8 @@
                         <StackPanel Orientation="Vertical" Margin="5">
                             <StackPanel Orientation="Horizontal"/>
                             <CheckBox x:Name="CheckBoxStartup" Margin="5" Content="Inicialização automática" Checked="CheckBoxStartup_OnChecked" Unchecked="CheckBoxStartup_OnUnchecked"/>
-                            <CheckBox x:Name="CheckBoxPing" Margin="5" Content="Contabilizar apenas ping de jogo" ToolTip="Desmarcando essa opção, a latencias altas só serão consideradas &#x0a;quando ocorrerem em todos servidores, e não apenas no servidor Riot(BR1)"/>
+                            <CheckBox x:Name="CheckBoxStartupMinimizado" Margin="5" Content="Inicialização minimizado" Checked="CheckBoxStartup_OnChecked" Unchecked="CheckBoxStartup_OnUnchecked"/>
+                            <CheckBox x:Name="CheckBoxPing" Margin="5" Content="Contabilizar apenas ping de jogo"/>
                         </StackPanel>
                     </StackPanel>
 
@@ -303,15 +281,66 @@
                 </Grid>
             </StackPanel>
 
-            <StackPanel Grid.Row="5" HorizontalAlignment="Stretch" VerticalAlignment="Center" Margin="20,0,20,16" Orientation="Vertical" Height="34">
-                <Grid Margin="0 0" HorizontalAlignment="Center">
-                    <StackPanel Orientation="Horizontal">
-                        <materialDesign:PackIcon Kind="Heart" Foreground="#4ad295" Width="20" Height="20" Margin="5" VerticalAlignment="Center"/>
-                        <TextBlock Text="Obrigado por ultilizar!" VerticalAlignment="Center" FontSize="20" Margin="5" FontWeight="Light"/>
+                <StackPanel Grid.Row="5" HorizontalAlignment="Stretch" Margin="20 0">
+                <Grid VerticalAlignment="Bottom" HorizontalAlignment="Center">
+                    <StackPanel VerticalAlignment="Bottom" Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="Heart" Foreground="#4ad295" Width="20" Height="20" Margin="5"/>
+                        <TextBlock Text="Obrigado por ultilizar!" FontSize="20" Margin="5" FontWeight="Light"/>
                     </StackPanel>
                 </Grid>
             </StackPanel>
         </Grid>
+        </ScrollViewer>
+
+        <!--Mover a tela-->
+        <Rectangle VerticalAlignment="Top" Height="30" Fill="#061422" MouseDown="Rectangle_OnMouseDown"/>
+        
+        <!--Botão minimizar-->
+        <Button 
+            x:Name="ButtonMinimizar" 
+            ToolTip="Minimizar" 
+            Content="{materialDesign:PackIcon WindowMinimize}" 
+            Width="30" Height="30" 
+            Background="{x:Null}" 
+            BorderBrush="{x:Null}" 
+            Padding="0" 
+            Foreground="White" 
+            Opacity="0.2" 
+            VerticalAlignment="Top" 
+            HorizontalAlignment="Right" 
+            Margin="0,0,75,0" 
+            Click="ButtonMinimizar_OnClick"/>
+
+        <!--Botão Maximizar-->
+        <Button 
+            x:Name="ButtonMaximizar" 
+            ToolTip="Maximizar" 
+            Content="{materialDesign:PackIcon WindowMaximize}" 
+            Width="30" Height="30" 
+            Background="{x:Null}" 
+            BorderBrush="{x:Null}" 
+            Padding="0" 
+            Foreground="White" 
+            Opacity="0.2" 
+            VerticalAlignment="Top" 
+            HorizontalAlignment="Right" 
+            Margin="0,0,40,0" 
+            Click="ButtonMaximizar_OnClick"/>
+
+        <!--Botão fechar-->
+        <Button 
+            x:Name="ButtonFechar" 
+            ToolTip="Fechar" 
+            Content="{materialDesign:PackIcon Power}" 
+            Width="30" Height="30" 
+            Background="{x:Null}" BorderBrush="{x:Null}" 
+            Padding="0" 
+            Foreground="White" 
+            Opacity="0.2" 
+            Margin="0,0,5,0" 
+            VerticalAlignment="Top" HorizontalAlignment="Right" 
+            Click="ButtonFechar_OnClick"/>
+
         <!--Barra de notificação-->
         <materialDesign:Snackbar 
             x:Name="NotificaInferior" 
@@ -319,5 +348,4 @@
             VerticalContentAlignment="Center"
             HorizontalContentAlignment="Center"/>
     </Grid>
-    <!--</ScrollViewer>-->
 </Window>

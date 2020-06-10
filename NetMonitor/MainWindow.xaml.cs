@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Drawing;
 using System.Globalization;
 using System.Net.NetworkInformation;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Forms;
 using System.Windows.Input;
 using System.Windows.Threading;
 using AutoUpdaterDotNET;
@@ -34,20 +36,26 @@ namespace NetMonitor
         {
             //CheckBoxStartup.IsChecked = Settings.Default.IniciarComWindows;
 
+            if (Settings.Default.InicializarMinimizado)
+            {
+                WindowState = WindowState.Minimized;
+                Hide();
+            }
+
             InitializeComponent();
             CarregarConfigs();
             _watchQueda.Reset();
             Ticker();
 
             //  Icone bandeija windows
-            System.Windows.Forms.NotifyIcon ni = new System.Windows.Forms.NotifyIcon();
-            ni.Icon = new System.Drawing.Icon("Internet-256.ico");
+            NotifyIcon ni = new NotifyIcon();
+            ni.Icon = new Icon("Internet-256.ico");
             ni.Visible = true;
             ni.DoubleClick +=
-                delegate (object sender, EventArgs args)
+                delegate
                 {
-                    this.Show();
-                    this.WindowState = WindowState.Normal;
+                    Show();
+                    WindowState = WindowState.Normal;
                 };
 
 
@@ -93,7 +101,7 @@ namespace NetMonitor
         protected override void OnStateChanged(EventArgs e)
         {
             if (WindowState == WindowState.Minimized)
-                this.Hide();
+                Hide();
             base.OnStateChanged(e);
         }
 
@@ -152,27 +160,22 @@ namespace NetMonitor
             {
                 Settings.Default.IniciarComWindows = CheckBoxStartup.IsChecked.Value;
             }
+
+            if (CheckBoxStartupMinimizado.IsChecked.HasValue)
+            {
+                Settings.Default.InicializarMinimizado = CheckBoxStartupMinimizado.IsChecked.Value;
+            }
+
             Settings.Default.Save();
         }
 
         private void CarregarConfigs()
         {
+            CheckBoxStartupMinimizado.IsChecked = Settings.Default.InicializarMinimizado;
             CheckBoxPing.IsChecked = Settings.Default.PingCheckbox;
             CheckBoxStartup.IsChecked = Settings.Default.IniciarComWindows;
             SliderIntervalo.Value = Settings.Default.Intevalo;
         }
-
-        //  Timer que loopa o intervalo definido pelo usuário
-        //private void TimerIntevalo()
-        //{
-        //    var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(5) };
-        //    timer.Tick += delegate
-        //    {
-        //        IniciarTeste();
-        //        //timer.Stop();
-        //    };
-        //    timer.Start();
-        //}
 
         //  Função que realiza a chamada do teste e valida o status de rede
 
@@ -434,6 +437,12 @@ namespace NetMonitor
         private void ButtonMinimizar_OnClick(object sender, RoutedEventArgs e)
         {
             WindowState = WindowState.Minimized;
+        }
+
+        // Botão maximizar
+        private void ButtonMaximizar_OnClick(object sender, RoutedEventArgs e)
+        {
+            WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
         }
 
         // Botão fechar
