@@ -14,7 +14,8 @@
         WindowStyle="None"
         ResizeMode="CanResize"
         MinWidth="555"
-        MinHeight="555">
+        MinHeight="555" 
+        Closed="MainWindow_OnClosed">
     <WindowChrome.WindowChrome>
         <WindowChrome 
             CaptionHeight="0"
@@ -232,7 +233,7 @@
                         <wpf:CartesianChart Margin="0, 0, 0, 0" Series="{Binding TabelaPingDataSource}" DataTooltip="{x:Null}" Hoverable="False" Height="160">
                             <wpf:CartesianChart.AxisX>
                                 <!--a small visual improvement, lets hide the first points (x = 0, x=1) to get better animations-->
-                                <wpf:Axis MinValue="0" MaxValue="10"></wpf:Axis>
+                                <wpf:Axis MinValue="0" MaxValue="20"></wpf:Axis>
                             </wpf:CartesianChart.AxisX>
 
                             <wpf:CartesianChart.AxisY>
@@ -259,7 +260,7 @@
                     <StackPanel Grid.Column="1" Margin="10">
                         <StackPanel Orientation="Vertical">
                             <TextBlock Text="Intervalo" FontSize="15" Margin="5" FontWeight="Light"/>
-                            <Slider x:Name="SliderIntervalo" Margin="0 -35 0 0" Minimum="5" Maximum="60" Style="{StaticResource MaterialDesignDiscreteSlider}"/>
+                            <Slider x:Name="SliderIntervalo" Margin="0 -35 0 0" Minimum="1" Maximum="60" Style="{StaticResource MaterialDesignDiscreteSlider}"/>
                             <Button Margin="5" HorizontalAlignment="Right" ToolTip="Abrir pasta de logs" Content="{materialDesign:PackIcon FolderOpenOutline}" Click="ButtonBase_OnClick"/>
                         </StackPanel>
                     </StackPanel>
@@ -269,7 +270,7 @@
                         <StackPanel Orientation="Vertical" Margin="5">
                             <StackPanel Orientation="Horizontal"/>
                             <CheckBox x:Name="CheckBoxStartup" Margin="5" Content="Inicialização automática" Checked="CheckBoxStartup_OnChecked" Unchecked="CheckBoxStartup_OnUnchecked"/>
-                            <CheckBox x:Name="CheckBoxStartupMinimizado" Margin="5" Content="Inicialização minimizado" Checked="CheckBoxStartup_OnChecked" Unchecked="CheckBoxStartup_OnUnchecked"/>
+                            <CheckBox x:Name="CheckBoxStartupMinimizado" Margin="5" Content="Inicializar minimizado" Checked="CheckBoxStartup_OnChecked" Unchecked="CheckBoxStartup_OnUnchecked"/>
                             <CheckBox x:Name="CheckBoxPing" Margin="5" Content="Contabilizar apenas ping de jogo"/>
                         </StackPanel>
                     </StackPanel>
@@ -339,7 +340,7 @@
             Opacity="0.2" 
             Margin="0,0,5,0" 
             VerticalAlignment="Top" HorizontalAlignment="Right" 
-            Click="ButtonFechar_OnClick"/>
+            Click="ButtonMinimizar_OnClick"/>
 
         <!--Barra de notificação-->
         <materialDesign:Snackbar 

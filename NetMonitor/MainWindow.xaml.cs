@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Drawing;
 using System.Globalization;
 using System.Net.NetworkInformation;
 using System.Reflection;
@@ -25,6 +24,7 @@ namespace NetMonitor
     /// </summary>
     public partial class MainWindow
     {
+        private bool inicializando = true;
         private bool _status = true;
         private int _nQuedas;
         private Stopwatch _watchQueda = new Stopwatch();
@@ -32,53 +32,88 @@ namespace NetMonitor
         private double _pingTabela;
         public SeriesCollection TabelaPingDataSource { get; set; }
 
+        public NotifyIcon NotifyIcon = new NotifyIcon();
+
         public MainWindow()
         {
-            //CheckBoxStartup.IsChecked = Settings.Default.IniciarComWindows;
-
+            //  Verifica se deve iniciar minimizado
             if (Settings.Default.InicializarMinimizado)
             {
                 WindowState = WindowState.Minimized;
                 Hide();
             }
 
+            //  Verifica se existe uma configuração de posição
+            //  Se existir, joga o programa pra posição salva
+            if (Settings.Default.PosX != 0 && Settings.Default.PosY != 0)
+            {
+                Left = Settings.Default.PosX;
+                Top = Settings.Default.PosY;
+            }
+
+            //  Inicializa os componentes
             InitializeComponent();
+
+            //  Carrega as configurações
             CarregarConfigs();
+
+            //  Como o relógio de queda já inicia quando é criado
+            //  Resetamos ele, pra ter seu valor 0 desde o começo
             _watchQueda.Reset();
+
+            //  Ativamos o nosso ticker
+            //  Ele é responsável por realizar as ações consecutivamente
+            //  Como atualizar os timers da interface e manter as configurções atualizadas :)
             Ticker();
 
-            //  Icone bandeija windows
-            NotifyIcon ni = new NotifyIcon();
-            ni.Icon = new Icon("Internet-256.ico");
-            ni.Visible = true;
-            ni.DoubleClick +=
-                delegate
-                {
-                    Show();
-                    WindowState = WindowState.Normal;
-                };
+            //  Cria o icone bandeja windows
+            NotifyIcon.Icon = Properties.Resources.Internet_256;
+            NotifyIcon.Visible = true;
+            NotifyIcon.Text = @"NetMonitor";
+            NotifyIcon.DoubleClick += NotifyIcon_RetomarJanela;
 
+            //  Cria o menu do ícone da bandeja
+            var contextMenu = new ContextMenu();
 
+            //  Botão mostrar do ícone da bandeja
+            //  Botão minimizar para a bandeja do icone da bandeja
+            //  Botão abrir pasta de log
+            //  Botão de sair do icone da bandeja
+            contextMenu.MenuItems.Add(new MenuItem("Mostrar",NotifyIcon_RetomarJanela));
+            contextMenu.MenuItems.Add(new MenuItem(@"Minimizar para a bandeja",
+                delegate { WindowState = WindowState.Minimized;}));
+            contextMenu.MenuItems.Add(new MenuItem(@"Abrir pasta de log", 
+                delegate { Process.Start(Logger._pasta); }));
+            contextMenu.MenuItems.Add("-");
+            contextMenu.MenuItems.Add(new MenuItem(@"Sair", delegate { Application.Current.Shutdown(); }));
+            
+            //  Passa o ContextMenu para o NotifyIcon
+            NotifyIcon.ContextMenu = contextMenu;
+
+            //  Verifica update
             AutoUpdater.Start("https://raw.githubusercontent.com/Hyper1025/NetMonitor/master/NetMonitor/Updater.xml");
 
-            //  Barra notificação
-            Global.BarraNotifica = NotificaInferior;
 
-            //  Log inicializado
-            Logger.IniciarLog();
-            Global.Notificar("Inicializado");
-
-            //TimerIntevalo();
-
-            // CODIGO NOVO
+            //  Cria a coleção de itens iniciais que vão aparecer na planilha de ping
             TabelaPingDataSource = new SeriesCollection
             {
                 new LineSeries
                 {
                     // Dados iniciais da tabela
-                    AreaLimit = -10,
+                    AreaLimit = -20,
                     Values = new ChartValues<ObservableValue>
                     {
+                        new ObservableValue(0),
+                        new ObservableValue(0),
+                        new ObservableValue(0),
+                        new ObservableValue(0),
+                        new ObservableValue(0),
+                        new ObservableValue(0),
+                        new ObservableValue(0),
+                        new ObservableValue(0),
+                        new ObservableValue(0),
+                        new ObservableValue(0),
+                        new ObservableValue(0),
                         new ObservableValue(0),
                         new ObservableValue(0),
                         new ObservableValue(0),
@@ -94,8 +129,27 @@ namespace NetMonitor
                 }
             };
 
+            //  Barra notificação
+            Global.BarraNotifica = NotificaInferior;
+
+            //  Log inicializado
+            Logger.IniciarLog();
+            if (!Settings.Default.InicializarMinimizado)
+            {
+                Global.Notificar("Inicializado");
+            }
+
             Task.Run(AtualizarTabela);
             DataContext = this;
+
+            inicializando = false;
+        }
+
+        //  Clique duplo no icone da bandeja
+        private void NotifyIcon_RetomarJanela(object sender, EventArgs e)
+        {
+            Show();
+            WindowState = WindowState.Normal;
         }
 
         protected override void OnStateChanged(EventArgs e)
@@ -151,6 +205,7 @@ namespace NetMonitor
             t.Start();
         }
 
+        //  Salva as configurações
         private void SaveConfigs()
         {
             _intervalo = (int)SliderIntervalo.Value;
@@ -166,9 +221,13 @@ namespace NetMonitor
                 Settings.Default.InicializarMinimizado = CheckBoxStartupMinimizado.IsChecked.Value;
             }
 
+            Settings.Default.PosX = Left;
+            Settings.Default.PosY = Top;
+
             Settings.Default.Save();
         }
 
+        //  Carrega as configurações
         private void CarregarConfigs()
         {
             CheckBoxStartupMinimizado.IsChecked = Settings.Default.InicializarMinimizado;
@@ -424,7 +483,7 @@ namespace NetMonitor
             private long? _tempoDeResposta;
             bool? _sucesso;
 
-            public long TempoDeResposta { get => _tempoDeResposta ?? 100;
+            public long TempoDeResposta { get => _tempoDeResposta ?? 1000;
                 set => _tempoDeResposta = value;
             }
             public bool Sucesso { get => _sucesso ?? false;
@@ -446,11 +505,10 @@ namespace NetMonitor
         }
 
         // Botão fechar
-        private void ButtonFechar_OnClick(object sender, RoutedEventArgs e)
-        {
-            Logger.Escrever(Logger.LogType.Final,TempoMonitorando.Text,ContadorDeQuedas.Text);
-            Application.Current.Shutdown();
-        }
+        //private void ButtonFechar_OnClick(object sender, RoutedEventArgs e)
+        //{
+        //    Application.Current.Shutdown();
+        //}
 
         // Evento para mover a janela
         private void Rectangle_OnMouseDown(object sender, MouseButtonEventArgs e)
@@ -466,17 +524,27 @@ namespace NetMonitor
         //  Adiciona ao startup do windows
         private void CheckBoxStartup_OnChecked(object sender, RoutedEventArgs e)
         {
-            RegistryKey rk = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", true);
-            rk.SetValue("NetMonitor", Assembly.GetExecutingAssembly().Location);
-            rk.Close();
+            if (inicializando) return;
+            var registryKey = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", true);
+            registryKey?.SetValue("NetMonitor", Assembly.GetEntryAssembly()?.Location ?? throw new InvalidOperationException());
+            registryKey?.Close();
         }
 
         //  Remove do startup do windows
         private void CheckBoxStartup_OnUnchecked(object sender, RoutedEventArgs e)
         {
-            RegistryKey rk = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", true);
-            rk.DeleteValue("NetMonitor", false);
-            rk.Close();
+            if (inicializando) return;
+            var registryKey = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", true);
+            registryKey?.DeleteValue("NetMonitor",false);
+            registryKey?.Close();
+        }
+
+        //  Quando a janela estiver prestes a fechar ele salva as configurações
+        private void MainWindow_OnClosed(object sender, EventArgs e)
+        {
+            Logger.Escrever(Logger.LogType.Final, TempoMonitorando.Text, ContadorDeQuedas.Text);
+            NotifyIcon.Visible = false;
+            NotifyIcon.Dispose();
         }
     }
 }

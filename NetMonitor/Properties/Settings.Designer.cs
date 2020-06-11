@@ -8,19 +8,14 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-using System.CodeDom.Compiler;
-using System.Configuration;
-using System.Diagnostics;
-using System.Runtime.CompilerServices;
-
 namespace NetMonitor.Properties {
     
     
-    [CompilerGenerated()]
-    [GeneratedCode("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "16.5.0.0")]
-    internal sealed partial class Settings : ApplicationSettingsBase {
+    [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "16.5.0.0")]
+    internal sealed partial class Settings : global::System.Configuration.ApplicationSettingsBase {
         
-        private static Settings defaultInstance = ((Settings)(Synchronized(new Settings())));
+        private static Settings defaultInstance = ((Settings)(global::System.Configuration.ApplicationSettingsBase.Synchronized(new Settings())));
         
         public static Settings Default {
             get {
@@ -28,9 +23,9 @@ namespace NetMonitor.Properties {
             }
         }
         
-        [UserScopedSetting()]
-        [DebuggerNonUserCode()]
-        [DefaultSettingValue("5")]
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("5")]
         public int Intevalo {
             get {
                 return ((int)(this["Intevalo"]));
@@ -40,9 +35,9 @@ namespace NetMonitor.Properties {
             }
         }
         
-        [UserScopedSetting()]
-        [DebuggerNonUserCode()]
-        [DefaultSettingValue("False")]
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
         public bool IniciarComWindows {
             get {
                 return ((bool)(this["IniciarComWindows"]));
@@ -52,9 +47,9 @@ namespace NetMonitor.Properties {
             }
         }
         
-        [UserScopedSetting()]
-        [DebuggerNonUserCode()]
-        [DefaultSettingValue("True")]
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
         public bool PingCheckbox {
             get {
                 return ((bool)(this["PingCheckbox"]));
@@ -64,15 +59,39 @@ namespace NetMonitor.Properties {
             }
         }
         
-        [UserScopedSetting()]
-        [DebuggerNonUserCode()]
-        [DefaultSettingValue("False")]
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
         public bool InicializarMinimizado {
             get {
                 return ((bool)(this["InicializarMinimizado"]));
             }
             set {
                 this["InicializarMinimizado"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public double PosX {
+            get {
+                return ((double)(this["PosX"]));
+            }
+            set {
+                this["PosX"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public double PosY {
+            get {
+                return ((double)(this["PosY"]));
+            }
+            set {
+                this["PosY"] = value;
             }
         }
     }
